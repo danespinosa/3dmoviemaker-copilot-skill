@@ -89,7 +89,28 @@ Copy-Item "C:\3d\cd3\*" "C:\3d\run\Microsoft Kids\3D Movie Maker\" -Recurse -For
 Copy-Item "C:\3d\cd9\*" "C:\3d\run\Microsoft Kids\3D Movie Maker\" -Recurse -Force -ErrorAction SilentlyContinue
 ```
 
-## Step 6: Set registry entries
+## Step 6: Download Melanie's sample movies
+
+The 3DMMForever fork does **not** include the sample movies. They must be downloaded from the original Microsoft repo:
+
+```powershell
+$destDir = "C:\3d\run\Microsoft Kids\Users\Melanie"
+New-Item -ItemType Directory -Path $destDir -Force
+
+$baseUrl = "https://raw.githubusercontent.com/microsoft/Microsoft-3D-Movie-Maker/104b2653e68046c2f6373186169f281006db35b1/cd3/SAMPLES"
+$files = @("BONGO.3MM","BOOOOOO.3MM","CITYTOUR.3MM","GRAVEYRD.3MM","HAUNTED.3MM","HOSPITAL.3MM",
+           "JUNGLE.3MM","MESSAGE.3MM","SPACE.3MM","SPROG.3MM","TERROR.3MM","THEBOOK.3MM",
+           "THELODGE.3MM","THETHIEF.3MM","VENUS31.3MM","WHERE.3MM")
+
+foreach ($f in $files) {
+    Write-Host "Downloading $f..."
+    Invoke-WebRequest -Uri "$baseUrl/$f" -OutFile "$destDir\$f" -UseBasicParsing
+}
+```
+
+Without these files, the "Watch Melanie's Movies" option in the app will show an error saying the movies aren't there.
+
+## Step 7: Set registry entries
 
 The app is 32-bit, so on 64-bit Windows use `WOW6432Node`. Use gsudo for HKLM access:
 
@@ -106,7 +127,7 @@ gsudo cmd /c "C:\3d\setreg.bat"
 
 **Important:** Do NOT include a trailing backslash in registry path values — it escapes the closing quote and corrupts the value.
 
-## Step 7: Launch
+## Step 8: Launch
 
 ```powershell
 Start-Process -FilePath "C:\3d\run\3dmovie.exe" -WorkingDirectory "C:\3d\run"
@@ -117,6 +138,7 @@ Start-Process -FilePath "C:\3d\run\3dmovie.exe" -WorkingDirectory "C:\3d\run"
 | Error | Cause | Fix |
 |---|---|---|
 | `_FFindMsKidsDir` | Registry `InstallDirectory` wrong or missing | Verify it points to `C:\3d\run\Microsoft Kids` (no trailing backslash) |
+| Melanie's movies missing | Sample .3MM files not downloaded | Download them from the original Microsoft repo (see Step 6) |
 | `_FInitProductNames:_FFindProductDir` | `3DMovie.chk` missing in product dir | Copy `utest.chk` as `3DMovie.chk` into `Microsoft Kids\3D Movie Maker\` |
 | `_FReadStringTables` | Wrong file used as `3DMovie.chk` | Must be `utest.chk` renamed, NOT `studio.chk` — utest.chk contains the string tables |
 | Debug assertion failures | Built in Debug mode | Rebuild with `x86:msvc:release` preset |
